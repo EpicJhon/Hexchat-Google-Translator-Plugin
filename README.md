@@ -1,0 +1,1 @@
+# Hexchat-Google-Translator-Plugin
