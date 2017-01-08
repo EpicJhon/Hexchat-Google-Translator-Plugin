@@ -18,7 +18,7 @@ import hexchat
 
 __module_name__ = "google translator"
 __module_version__ = "1.0"
-__module_description__ = "Translates from one language to others using Yanxdex Translate."
+__module_description__ = "Translates from one language to others using Google Translate."
 __module_author__ = "EpicJhon"
 
 # ############################
