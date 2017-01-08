@@ -82,8 +82,6 @@ class Translator(object):
             raise Exception('Translation API returned and empty response.')
         if PY2:
             result = result.encode('utf-8')
-        if result.strip() == source.strip():
-            raise Exception('Translation API returned the input string unchanged.')
 
     def _request(self, url, host=None, type_=None, data=None):
         encoded_data = urlencode(data).encode('utf-8')
