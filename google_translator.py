@@ -9,6 +9,7 @@
 from translate import Translator
 import threading
 import hexchat
+import os
 
 # ############################
 #
@@ -17,7 +18,7 @@ import hexchat
 # ############################
 
 __module_name__ = "google translator"
-__module_version__ = "1.0"
+__module_version__ = "1.1"
 __module_description__ = "Translates from one language to others using Google Translate."
 __module_author__ = "EpicJhon"
 
@@ -45,9 +46,35 @@ AUTOCHANNEL = {}
 
 # ############################
 #
+# Persistence
+#
+# ############################
+
+def save_config(filename, dic):
+    config_dir = hexchat.get_info('configdir') + '/google_translator/'
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    f = open(config_dir + filename + '.db', 'w')
+    f.write(str(dic))
+    f.close()
+
+
+def load_config(filename):
+    config_dir = hexchat.get_info('configdir') + '/google_translator/'
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+    f = open(config_dir + filename + '.db', 'r')
+    dic = f.read()
+    f.close()
+    return eval(dic)
+
+
+# ############################
+#
 # Translate function
 #
 # ############################
+
 def translate(message, _from=default_from, to=default_to):
     if _from == '':
         _from = 'auto'
@@ -103,7 +130,7 @@ def hook_add_channel(word, word_eol, userdata):
         src_lang = word[3]
 
     AUTOCHANNEL[hexchat.get_info('network') + ' ' + channel.lower()] = (dest_lang, src_lang)
-    hexchat.set_pluginpref('google_tr_auto_channel', str(AUTOCHANNEL))
+    save_config('google_tr_auto_channel', str(AUTOCHANNEL))
     hexchat.prnt("Added channel %s to the watch list." % channel)
 
     return hexchat.EAT_ALL
@@ -116,7 +143,7 @@ def hook_remove_channel(word, word_eol, userdata):
         channel = hexchat.get_info('channel')
 
     if AUTOCHANNEL.pop(hexchat.get_info('network') + ' ' + channel.lower(), None) is not None:
-        hexchat.set_pluginpref('google_tr_auto_channel', str(AUTOCHANNEL))
+        save_config('google_tr_auto_channel', str(AUTOCHANNEL))
         hexchat.prnt('Channel ' + channel + ' has been removed from the watch list.')
 
     return hexchat.EAT_ALL
@@ -138,7 +165,7 @@ def hook_add_user(word, word_eol, userdata):
         src_lang = word[3]
 
     AUTOUSER[hexchat.get_info('network') + ' ' + hexchat.get_info('channel') + ' ' + user.lower()] = (dest_lang, src_lang)
-    hexchat.set_pluginpref('google_tr_auto_user', str(AUTOUSER))
+    save_config('google_tr_auto_user', str(AUTOUSER))
     hexchat.prnt("Added user %s to the watch list." % user)
 
     return hexchat.EAT_ALL
@@ -152,15 +179,23 @@ def hook_remove_user(word, word_eol, userdata):
     user = hexchat.strip(word[1])
 
     if AUTOUSER.pop(hexchat.get_info('network') + ' ' + hexchat.get_info('channel') + ' ' + user.lower(), None) is not None:
-        hexchat.set_pluginpref('google_tr_auto_user', str(AUTOUSER))
+        save_config('google_tr_auto_user', str(AUTOUSER))
         hexchat.prnt('User ' + user + ' has been removed from the watch list.')
 
     return hexchat.EAT_ALL
 
 
-def hook_print_watch_list(word, word_eol, userdata):
-    users = [key.split(' ')[1] for key in AUTOUSER.keys()]
-    hexchat.prnt("WatchList: %s" % (" ".join(users)))
+def hook_print_user_list(word, word_eol, userdata):
+    hexchat.prnt("Auto translate users")
+    for key, value in AUTOUSER.items():
+        hexchat.prnt("\t" + key + ' => %s' % (value,))
+    return hexchat.EAT_ALL
+
+
+def hook_print_channel_list(word, word_eol, userdata):
+    hexchat.prnt("Auto translate channels")
+    for key, value in AUTOCHANNEL.items():
+        hexchat.prnt("\t" + key + ' => %s' % (value,))
     return hexchat.EAT_ALL
 
 
@@ -248,7 +283,10 @@ help_message = '/RMTR <user_nick> - removes user_nick from the watch list for au
 hexchat.hook_command('RMTR', hook_remove_user, help=help_message, priority=hexchat.PRI_HIGHEST)
 
 help_message = '/LSUSERS - prints out all users on the watch list for automatic translations to the screen locally.'
-hexchat.hook_command('LSUSERS', hook_print_watch_list, help=help_message, priority=hexchat.PRI_HIGHEST)
+hexchat.hook_command('LSUSERS', hook_print_user_list, help=help_message, priority=hexchat.PRI_HIGHEST)
+
+help_message = '/LSCHANNELS - prints out all channels on the watch list for automatic translations to the screen locally.'
+hexchat.hook_command('LSCHANNELS', hook_print_channel_list, help=help_message, priority=hexchat.PRI_HIGHEST)
 
 help_message = '/TR <message> - translates message into the language according to form "to-from".  This auto detects the source language.'
 hexchat.hook_command('TR', hook_tr, help=help_message, priority=hexchat.PRI_HIGHEST)
@@ -280,11 +318,11 @@ hexchat.hook_unload(hook_unload)
 print('Google Translator loaded!')
 
 try:
-    AUTOUSER = eval(hexchat.get_pluginpref('google_tr_auto_user'))
+    AUTOUSER = load_config('google_tr_auto_user')
 except:
     pass
 
 try:
-    AUTOCHANNEL = eval(hexchat.get_pluginpref('google_tr_auto_channel'))
+    AUTOCHANNEL = load_config('google_tr_auto_channel')
 except:
     pass
