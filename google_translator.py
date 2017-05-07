@@ -210,7 +210,7 @@ def hook_tr(word, word_eol, userdata):
 def hook_tra(word, word_eol, userdata):
     _from = word[1]
     to = word[2]
-    message = word_eol[3]
+    message = word_eol[1]
     threading.Thread(target=worker_hook_tr, args=(message, _from, to)).start()
     return hexchat.EAT_ALL
 
